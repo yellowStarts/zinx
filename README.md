@@ -17,3 +17,8 @@ Zinx 作为一个轻量级框架，虽然轻便，但是却可以满足以上的
 server 模块基本功能思维导图
 
 ![](./docs/images/zinx-server.jpg)
+
+## 链接封装和业务绑定
+链接封装和业务绑定思维导图
+
+![](./docs/images/zinx-yw.jpg)
