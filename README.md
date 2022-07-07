@@ -22,3 +22,6 @@ server 模块基本功能思维导图
 链接封装和业务绑定思维导图
 
 ![](./docs/images/zinx-yw.jpg)
+
+## 路由功能模块
+![](./docs/images/zinx-route.jpg)
