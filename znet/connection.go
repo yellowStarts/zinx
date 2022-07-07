@@ -36,6 +36,25 @@ func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandl
 	}
 }
 
+// StartWriter 写消息 Goroutine，用户将数据发送给客户端
+func (c *Connection) StartWriter() {
+	fmt.Println("[Writer Goroutine is running]")
+	defer fmt.Println(c.RemoteAddr().String(), " [conn Writer exit!]")
+	for {
+		select {
+		case data := <-c.msgChan:
+			// 有数据要写给客户端
+			if _, err := c.Conn.Write(data); err != nil {
+				fmt.Println("Send Data error:, ", err, " Conn Writer exit")
+				return
+			}
+		case <-c.ExitBuffChan:
+			// conn 已经关闭
+			return
+		}
+	}
+}
+
 // 处理 conn 读数据的 goroutine
 func (c *Connection) StartReader() {
 	fmt.Println("Reader Goroutine is running")
