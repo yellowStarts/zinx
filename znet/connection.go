@@ -1,7 +1,9 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"zinx/ziface"
 )
@@ -37,18 +39,37 @@ func (c *Connection) StartReader() {
 	defer fmt.Println(c.Conn.RemoteAddr().String(), " conn reader exit!")
 	defer c.Stop()
 	for {
-		// 读取我们最大的数据到 buf 中
-		buf := make([]byte, 512)
-		_, err := c.Conn.Read(buf)
-		if err != nil {
-			fmt.Println("recv buf err ", err)
+		// 创建拆包解包的对象
+		dp := NewDataPack()
+		// 读取客户端的 Msg head
+		headData := make([]byte, dp.GetHeadLen())
+		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
+			fmt.Println("read msg head error ", err)
 			c.ExitBuffChan <- true
 			continue
 		}
+		// 拆包，得到 msgId 和 dataLen 放在msg 中
+		msg, err := dp.UnPack(headData)
+		if err != nil {
+			fmt.Println("unpack error ", err)
+			c.ExitBuffChan <- true
+			continue
+		}
+		// 根据 dataLen 读取 data，放在 msg.Data 中
+		var data []byte
+		if msg.GetDataLen() > 0 {
+			data = make([]byte, msg.GetDataLen())
+			if _, err := io.ReadFull(c.GetTCPConnection(), data); err != nil {
+				fmt.Println("read msg data error ", err)
+				c.ExitBuffChan <- true
+				continue
+			}
+		}
+		msg.SetData(data)
 		// 得到当前客户端请求的 Request 数据
 		req := Request{
 			conn: c,
-			data: buf,
+			msg:  msg,
 		}
 		// 从路由 Routers 中找到注册绑定 Conn的对应 Handle
 		go func(request ziface.IRequest) {
@@ -76,7 +97,7 @@ func (c *Connection) Start() {
 // Stop 停止连接，结束当前连接状态 M
 func (c *Connection) Stop() {
 	// 1. 如果当前连接已经关闭
-	if c.isClosed == true {
+	if c.isClosed {
 		return
 	}
 	c.isClosed = true
@@ -102,4 +123,25 @@ func (c *Connection) GetConnID() uint32 {
 // 获取远程客户端地址信息
 func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
+}
+
+// SendMsg 直接将 Message数据发送数据给远程的TCP客户端
+func (c *Connection) SendMsg(msgId uint32, data []byte) error {
+	if c.isClosed {
+		return errors.New("Connection closed when send msg")
+	}
+	// 将 data 封包，并且发送
+	dp := NewDataPack()
+	msg, err := dp.Pack(NewMsgPackage(msgId, data))
+	if err != nil {
+		fmt.Println("Pack error msg id = ", msgId)
+		return errors.New("Pack error msg")
+	}
+	// 写回客户端
+	if _, err := c.Conn.Write(msg); err != nil {
+		fmt.Println("Write msg id ", msgId, " error ")
+		c.ExitBuffChan <- true
+		return errors.New("conn Write error")
+	}
+	return nil
 }
