@@ -3,18 +3,24 @@ package znet
 import (
 	"fmt"
 	"strconv"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
 // 消息管理实现结构体
 type MsgHandle struct {
-	Apis map[uint32]ziface.IRouter // 存放每个 msgId 所对应的处理方法的map属性
+	Apis           map[uint32]ziface.IRouter // 存放每个 msgId 所对应的处理方法的map属性
+	WorkerPoolSize uint32                    // 业务工作 Worker 池的数量
+	TaskQueue      []chan ziface.IRequest    // Worker负责取任务的消息队列
 }
 
 // NewMsgHandle 创建消息管理
 func NewMsgHandle() *MsgHandle {
 	return &MsgHandle{
-		Apis: make(map[uint32]ziface.IRouter),
+		Apis:           make(map[uint32]ziface.IRouter),
+		WorkerPoolSize: utils.GlobalObject.WorkerPoolSize,
+		// 一个woeker对应一个queue
+		TaskQueue: make([]chan ziface.IRequest, utils.GlobalObject.WorkerPoolSize),
 	}
 }
 

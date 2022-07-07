@@ -55,3 +55,16 @@ server 模块基本功能思维导图
 
 Server 依然是处理客户端的响应，主要关键的几个方法是 Listen、Accept 等。当建立与客户端的套接字后，那么就会开启两个 Goroutine 分别处理读数据业务和写数据业务，读写数据之间的消息通过一个 Channel 传递。
 
+## 实现工作池模块
+
+![](./docs/images/zinx-queue-worker.jpg)
+
+通过 worker 的数量来限定处理业务的固定 goroutine 数量，而不是无限制的开辟 Goroutine，虽然我们知道 go 的调度算法已经做的很极致了，但是大数量的 Goroutine 依然会带来一些不必要的环境切换成本，这些本应该是服务器应该节省掉的成本。我们可以用消息队列来缓冲 worker 工作的数据。
+
+初步的设计结构如下图：
+
+![](./docs/images/zinx-queue-worker-1.jpg)
+
+
+
+
