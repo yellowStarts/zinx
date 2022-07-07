@@ -13,7 +13,7 @@ import (
 type Connection struct {
 	// 当前Conn属于哪个Server
 	// 当前conn属于哪个server，在conn初始化的时候添加即可
-	TcpServer ziface.IServer 
+	TcpServer ziface.IServer
 	// 当前连接的socker TCP 套接字
 	Conn *net.TCPConn
 	// 当前连接的ID，也可以称作为 SessionID，ID全局唯一
@@ -29,8 +29,10 @@ type Connection struct {
 }
 
 // NewConnection 创建连接的方法
-func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandle) *Connection {
-	return &Connection{
+func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandle) *Connection {
+	// 初始化 Conn 属性
+	c := &Connection{
+		TcpServer:    server,
 		Conn:         conn,
 		ConnID:       connID,
 		isClosed:     false,
@@ -38,6 +40,10 @@ func NewConnection(conn *net.TCPConn, connID uint32, msgHandler ziface.IMsgHandl
 		ExitBuffChan: make(chan bool, 1),
 		msgChan:      make(chan []byte),
 	}
+	// 将新创建的Conn添加到连接管理中
+	// 将当前新创建的连接添加到ConnManager中
+	c.TcpServer.GetConnMgr().Add(c)
+	return c
 }
 
 // StartWriter 写消息 Goroutine，用户将数据发送给客户端
