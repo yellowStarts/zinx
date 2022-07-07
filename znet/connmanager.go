@@ -43,8 +43,8 @@ func (cm *ConnManager) Remove(conn ziface.IConnection) {
 // Get 利用 connID 获取连接
 func (cm *ConnManager) Get(connID uint32) (ziface.IConnection, error) {
 	// 保护共享资源Map 加 写锁
-	cm.connLock.Lock()
-	defer cm.connLock.Unlock()
+	cm.connLock.RLock()
+	defer cm.connLock.RUnlock()
 	if conn, ok := cm.connections[connID]; ok {
 		return conn, nil
 	} else {

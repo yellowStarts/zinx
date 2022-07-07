@@ -69,4 +69,9 @@ Server 依然是处理客户端的响应，主要关键的几个方法是 Listen
 
 ![](./docs/images/zinx-conn.jpg)
 
+## 连接属性设置
+
+![](./docs/images/zinx-conn-setting.jpg)
+
+
 
