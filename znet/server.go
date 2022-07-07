@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"zinx/utils"
 	"zinx/ziface"
 )
 
@@ -34,12 +35,14 @@ func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
 }
 
 // NewServer 创建一个服务器句柄
-func NewServer(name string) ziface.IServer {
+func NewServer() ziface.IServer {
+	// 先初始化全局配置文件
+	utils.GlobalObject.Reload()
 	s := &Server{
-		Name:      name,
+		Name:      utils.GlobalObject.Name, // 从全局参数获取
 		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      7777,
+		IP:        utils.GlobalObject.Host,    // 从全局参数获取
+		Port:      utils.GlobalObject.TcpPort, // 从全局参数获取
 		Router:    nil,
 	}
 	return s
@@ -47,7 +50,13 @@ func NewServer(name string) ziface.IServer {
 
 // Start 开启网络服务
 func (s *Server) Start() {
-	fmt.Printf("[START] Server listener at IP: %s, Port %d, is starting\n", s.IP, s.Port)
+	// 如果方法正确，运行时就会打印出
+	// Version: V0.4, MaxConn: 3, MaxPacketSize: 4096
+	fmt.Printf("[START] Server name: %s, listenner at IP: %s, Port %d is starting\n", s.Name, s.IP, s.Port)
+	fmt.Printf("[Zinx] Version: %s, MaxConn: %d, MaxPacketSize: %d\n",
+		utils.GlobalObject.Version,
+		utils.GlobalObject.MaxConn,
+		utils.GlobalObject.MaxPacketSize)
 
 	// 开启一个 go 去做服务端 Listenner 业务
 	go func() {

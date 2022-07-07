@@ -25,3 +25,6 @@ server 模块基本功能思维导图
 
 ## 路由功能模块
 ![](./docs/images/zinx-route.jpg)
+
+## 全局配置模块
+![](./docs/images/zinx-globalsetting.jpg)
