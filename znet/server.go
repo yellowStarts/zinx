@@ -21,6 +21,8 @@ type Server struct {
 	Port int
 	// 当前 Server 由用户绑定的回调router，也就是Server注册的连接对应的处理业务
 	msgHandler ziface.IMsgHandle
+	// 当前Server的连接管理器
+	ConnMgr ziface.IConnManager
 }
 
 // 定义当前客户端连接的 handle api
@@ -44,6 +46,7 @@ func NewServer() ziface.IServer {
 		IP:         utils.GlobalObject.Host,    // 从全局参数获取
 		Port:       utils.GlobalObject.TcpPort, // 从全局参数获取
 		msgHandler: NewMsgHandle(),
+		ConnMgr:    NewConnManager(), // 创建 ConnManager
 	}
 	return s
 }
@@ -117,4 +120,9 @@ func (s *Server) Serve() {
 // 给当前服务注册一个路由业务方法，供客户端连接处理使用
 func (s *Server) AddRouter(msgId uint32, router ziface.IRouter) {
 	s.msgHandler.AddRouter(msgId, router)
+}
+
+// GetConnMgr 得到连接管理
+func (s *Server) GetConnMgr() ziface.IConnManager {
+	return s.ConnMgr
 }

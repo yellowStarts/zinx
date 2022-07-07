@@ -11,6 +11,9 @@ import (
 
 // IConnection 接口实现，定义一个 Connection 服务结构体
 type Connection struct {
+	// 当前Conn属于哪个Server
+	// 当前conn属于哪个server，在conn初始化的时候添加即可
+	TcpServer ziface.IServer 
 	// 当前连接的socker TCP 套接字
 	Conn *net.TCPConn
 	// 当前连接的ID，也可以称作为 SessionID，ID全局唯一
