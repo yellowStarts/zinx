@@ -107,7 +107,8 @@ func (s *Server) Start() {
 // Stop 停止服务
 func (s *Server) Stop() {
 	fmt.Println("[STOP] zinx server, name ", s.Name)
-	// TODO Server.Stop() 将其他需要清理的连接信息或者其他信息，也要一并停止或者清理
+	// 将其他需要清理的连接信息或者其他信息，也要一并停止或者清理
+	s.ConnMgr.ClearConn()
 }
 
 // Serve 开启服务

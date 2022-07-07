@@ -131,16 +131,18 @@ func (c *Connection) Start() {
 
 // Stop 停止连接，结束当前连接状态 M
 func (c *Connection) Stop() {
+	fmt.Println("Conn Stop()...ConnID = ", c.ConnID)
 	// 1. 如果当前连接已经关闭
 	if c.isClosed {
 		return
 	}
 	c.isClosed = true
-	// TODO Cpnnection Stop() 如果用户注册了该连接的关闭回调业务，那么在此刻应该显示调用
 	// 关闭 socket 连接
 	c.Conn.Close()
-	// 通知从缓冲队列读取数据的业务，该连接已经关闭
+	// 关闭 Writer Goroutine
 	c.ExitBuffChan <- true
+	// 将连接从连接管理器中删除, 从ConnManager中删除conn
+	c.TcpServer.GetConnMgr().Remove(c)
 	// 关闭该连接全部管道
 	close(c.ExitBuffChan)
 }
