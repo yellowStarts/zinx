@@ -61,7 +61,7 @@ func (mh *MsgHandle) StartOneWorker(workerID int, taskQueue chan ziface.IRequest
 	}
 }
 
-// 启动worker 工作池
+// StartWorkerPool 启动worker 工作池
 func (mh *MsgHandle) StartWorkerPool() {
 	// 遍历需要启动的worker的数量，依次启动
 	for i := 0; i < int(mh.WorkerPoolSize); i++ {
@@ -71,4 +71,16 @@ func (mh *MsgHandle) StartWorkerPool() {
 		// 启动当前worker，阻塞的等待对应的任务队列是否有消息传递进来
 		go mh.StartOneWorker(i, mh.TaskQueue[i])
 	}
+}
+
+// 将消息交给TaskQueue，由worker进行处理
+func (mh *MsgHandle) SendMsgToTaskQueue(request ziface.IRequest) {
+	// 根据 ConnID 来分配当前的连接应该由哪个worker负责处理
+	// 轮询的平均分配法则
+	// 得到需要处理此条连接的workerID
+	workerID := request.GetConnection().GetConnID() % mh.WorkerPoolSize
+	fmt.Println("Add ConnID=", request.GetConnection().GetConnID(),
+		" request msgID=", request.GetMsgId(), " to workerID=", workerID)
+	// 将请求消息发送给任务队列
+	mh.TaskQueue[workerID] <- request
 }
