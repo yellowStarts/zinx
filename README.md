@@ -44,3 +44,14 @@ server 模块基本功能思维导图
 ## 多路由模块
 
 ![](./docs/images/zinx-routes.jpg)
+
+## 读写分类模块
+
+![](./docs/images/zinx-rw.jpg)
+
+完成读写分类后，框架的架构如下：
+
+![](./docs/images/zinx-v07.jpg)
+
+Server 依然是处理客户端的响应，主要关键的几个方法是 Listen、Accept 等。当建立与客户端的套接字后，那么就会开启两个 Goroutine 分别处理读数据业务和写数据业务，读写数据之间的消息通过一个 Channel 传递。
+
