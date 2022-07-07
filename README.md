@@ -31,3 +31,8 @@ server 模块基本功能思维导图
 
 ## 消息封装模块
 ![](./docs/images/zinx-message.jpg)
+采用经典的 TLV(Type-Len-Value)封包格式来解决 TCP 粘包问题。
+
+![](./docs/images/zinx-tlv.jpg)
+
+由于 Zinx 也是 TCP 流的形式传播数据，难免会出现消息 1 和消息 2 一同发送，那么 zinx 就需要有能力区分两个消息的边界，所以 Zinx 此时应该提供一个统一的拆包和封包的方法。在发包之前打包成如上图这种格式的有 head 和 body 的两部分的包，在收到数据的时候分两次进行读取，先读取固定长度的 head 部分，得到后续 Data 的长度，再根据 DataLen 读取之后的 body。这样就能够解决粘包的问题了。
