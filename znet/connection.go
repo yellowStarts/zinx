@@ -100,8 +100,11 @@ func (c *Connection) StartReader() {
 
 // Start 启动连接，让当前连接开始工作
 func (c *Connection) Start() {
-	// 开始处理该连接读取到客户端数据之后的请求业务
+	// 1. 开启用于从客户端都且数据流程的 Goroutine
 	go c.StartReader()
+	// 2. 开启用于回写客户端数据流程的 Goroutine
+	go c.StartWriter()
+
 	for {
 		select {
 		case <-c.ExitBuffChan:
