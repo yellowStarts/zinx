@@ -28,3 +28,6 @@ server 模块基本功能思维导图
 
 ## 全局配置模块
 ![](./docs/images/zinx-globalsetting.jpg)
+
+## 消息封装模块
+![](./docs/images/zinx-message.jpg)
