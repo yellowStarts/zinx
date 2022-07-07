@@ -26,6 +26,8 @@ type Connection struct {
 	ExitBuffChan chan bool
 	// 无缓冲管道，用于读，写两个 goroutine 之间的消息通信
 	msgChan chan []byte
+	// 有缓冲管道，用于读，写两个 goroutine 之间的消息通信
+	msgBuffChan chan []byte
 }
 
 // NewConnection 创建连接的方法
@@ -39,6 +41,7 @@ func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, msgH
 		MsgHandler:   msgHandler,
 		ExitBuffChan: make(chan bool, 1),
 		msgChan:      make(chan []byte),
+		msgBuffChan:  make(chan []byte, utils.GlobalObject.MaxMsgChanLen),
 	}
 	// 将新创建的Conn添加到连接管理中
 	// 将当前新创建的连接添加到ConnManager中
@@ -57,6 +60,18 @@ func (c *Connection) StartWriter() {
 			if _, err := c.Conn.Write(data); err != nil {
 				fmt.Println("Send Data error:, ", err, " Conn Writer exit")
 				return
+			}
+		// 针对有缓冲channel需要些的数据处理
+		case data, ok := <-c.msgBuffChan:
+			if ok {
+				// 有数据要写给客户端
+				if _, err := c.Conn.Write(data); err != nil {
+					fmt.Println("Send Data error:, ", err, " Conn Writer exit")
+					return
+				}
+			} else {
+				break
+				// fmt.Println("msgBuffChan is Closed")
 			}
 		case <-c.ExitBuffChan:
 			// conn 已经关闭
@@ -176,5 +191,22 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	}
 	// 写回客户端
 	c.msgChan <- msg //将之前直接回写给conn.Write的方法 改为 发送给Channel 供Writer读取
+	return nil
+}
+
+// SendBuffMsg 直接将 Message数据发送数据给远程的TCP客户端(有缓冲)
+func (c *Connection) SendBuffMsg(msgId uint32, data []byte) error {
+	if c.isClosed {
+		return errors.New("Connection closed when send buff msg")
+	}
+	// 将 data 封包，并且发送
+	dp := NewDataPack()
+	msg, err := dp.Pack(NewMsgPackage(msgId, data))
+	if err != nil {
+		fmt.Println("Pack error msg id = ", msgId)
+		return errors.New("Pack error msg")
+	}
+	// 写回客户端
+	c.msgBuffChan <- msg //将之前直接回写给conn.Write的方法 改为 发送给Channel 供Writer读取
 	return nil
 }
