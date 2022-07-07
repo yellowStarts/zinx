@@ -65,6 +65,8 @@ Server 依然是处理客户端的响应，主要关键的几个方法是 Listen
 
 ![](./docs/images/zinx-queue-worker-1.jpg)
 
+## 实现链接控制
 
+![](./docs/images/zinx-conn.jpg)
 
 
