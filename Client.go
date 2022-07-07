@@ -2,44 +2,56 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
+	"time"
 	"zinx/znet"
 )
 
+// 模拟客户端
 func main() {
-	// 客户端 goroutine， 复制模拟粘包的数据，然后进行发送
+	fmt.Println("Client Test ... start")
+	// 3 秒之后发起测试请求，给服务端开启服务的机会
+	time.Sleep(3 * time.Second)
 	conn, err := net.Dial("tcp", "127.0.0.1:7777")
 	if err != nil {
-		fmt.Println("client dial err: ", err)
+		fmt.Println("client start err, exit!")
 		return
 	}
-	// 创建一个粘包对象
-	dp := znet.NewDataPack()
-	// 封装一个 msg1 包
-	msg1 := &znet.Message{
-		Id:      0,
-		DataLen: 5,
-		Data:    []byte{'h', 'e', 'l', 'l', 'o'},
+	for {
+		// 发封包 message 消息
+		dp := znet.NewDataPack()
+		msg, _ := dp.Pack(znet.NewMsgPackage(0, []byte("Zinx v0.5 Client Test Message")))
+		_, err := conn.Write(msg)
+		if err != nil {
+			fmt.Println("write error err ", err)
+			return
+		}
+		// 先读出流中 head 部分
+		headData := make([]byte, dp.GetHeadLen())
+		_, err = io.ReadFull(conn, headData) // ReadFull 会把msg填充满为止
+		if err != nil {
+			fmt.Println("read head error")
+			break
+		}
+		// 将headData字节流，拆包到 msg 中
+		msgHead, err := dp.UnPack(headData)
+		if err != nil {
+			fmt.Println("server unpack err: ", err)
+			return
+		}
+		if msgHead.GetDataLen() > 0 {
+			//msg 是有data数据的，需要再次读取data数据
+			msg := msgHead.(*znet.Message)
+			msg.Data = make([]byte, msg.GetDataLen())
+			//根据dataLen从io中读取字节流
+			_, err := io.ReadFull(conn, msg.Data)
+			if err != nil {
+				fmt.Println("server unpack data err:", err)
+				return
+			}
+			fmt.Println("==> Recv Msg: ID=", msg.Id, ", len=", msg.DataLen, ", data=", string(msg.Data))
+		}
+		time.Sleep(1 * time.Second)
 	}
-	sendData1, err := dp.Pack(msg1)
-	if err != nil {
-		fmt.Println("client pack msg1 err: ", err)
-		return
-	}
-	msg2 := &znet.Message{
-		Id:      1,
-		DataLen: 7,
-		Data:    []byte{'w', 'o', 'r', 'l', 'd', '!', '!'},
-	}
-	sendData2, err := dp.Pack(msg2)
-	if err != nil {
-		fmt.Println("client pack msg2 err: ", err)
-		return
-	}
-	// 将 sendData1和sendData2 拼接一起，组成粘包
-	sendData1 = append(sendData1, sendData2...)
-	// 向服务器端写数据
-	conn.Write(sendData1)
-	// 客户端阻塞
-	select {}
 }
