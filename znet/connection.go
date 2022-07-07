@@ -155,10 +155,6 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 		return errors.New("Pack error msg")
 	}
 	// 写回客户端
-	if _, err := c.Conn.Write(msg); err != nil {
-		fmt.Println("Write msg id ", msgId, " error ")
-		c.ExitBuffChan <- true
-		return errors.New("conn Write error")
-	}
+	c.msgChan <- msg //将之前直接回写给conn.Write的方法 改为 发送给Channel 供Writer读取
 	return nil
 }
